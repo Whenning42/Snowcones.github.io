@@ -1,0 +1,151 @@
+<head>
+
+<script id=“burningShip-fs” type=“x-shader/x-fragment”>
+	precision highp float;
+	uniform float zoom;
+	uniform vec2 disp;
+	void main(void)
+	{
+		gl_FragColor=vec4(1.0, 1.0, 1.0, 1.0);
+	}
+</script>
+
+<script id=“burningShip-vs” type=“x-shader/x-vertex”>
+	attribute vec3 vertexPos;
+	out vec3 outPos;
+	void main(void)
+	{
+		gl_Position=vertexPos;
+		outPos=vertexPos;
+	}
+</script>
+
+
+<script type=“text/javascript”>
+	var gl;
+	function initGL(canvas)
+	{
+		try
+		{
+			gl=canvas.getContext(“experimental-webgl”);
+			gl.viewportWidth=canvas.width;
+			gl.viewportHeight=canvas.height;
+		} catch(e) {}
+		if (!gl) 
+		{
+			alert(“Couldn’t initialize WebGL”);
+		}
+	}
+
+	function getShader(gl, id)
+	{
+		var shaderScript=document.getElementById(id);
+		if(!shaderScript)
+		{
+			return null;
+		}
+
+		var str=“”;
+		var k=shaderScript.firstChild;
+		while(k)
+		{
+			if(k.nodeType==3)
+			{
+				str+=k.textContent;
+			}
+			k=k.nextSibiling;
+		}
+		
+		var shader;
+		if(shaderScript.type==“x-shader/x-fragment”)
+		{
+			shader=gl.createShader(gl.FRAGMENT_SHADER);
+		} 
+		else if (shaderScript.type==“x-shader/x-vertex”)
+		{
+			shader=gl.createShader(gl.VERTEX_SHADER);
+		}
+		else
+		{
+			return null;
+		}
+
+		gl.shaderSource(shader, str);
+		gl.compileShader(shader);
+
+		if(!gl.getShaderParameter(shader, gl.COMPILE_STATUS))
+		{
+			alert(gl.getShaderInfoLog(shader));
+			return null;
+		}
+
+		return shader;
+	}
+
+	var shaderProgram;
+
+	function initShaders()
+	{
+		var vertexShader=getShader(gl, “burningShip-vs”);
+		var fragmentShader=getShader(gl, “burningShip-fs”);
+
+		shaderProgram=gl.createProgram();
+		gl.attachShader(shaderProgram, vertexShader);
+		gl.attachShader(shaderProgram, fragmentShader);
+		
+		if(!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS))
+		{
+			alert(“Couldn’t initialize shaders”);
+		}
+
+		gl.useProgram(shaderProgram);
+
+		shaderProgram.vertexPositionAttribute=gl.getAttribLocation(shaderProgram, “vertexPos”);
+		gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+
+		shaderProgram.zoomUniform=gl.getUniformLocation(shaderProgram, “zoom”);
+		shaderProgram.dispUniform=gl.getUniformLocation(shaderProgram, “disp”);
+	}
+
+	var quadPositionsBuffer;
+
+	function initBuffers() 
+	{
+		quadPositionsBuffer=gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
+		var vertices=[	-1.0, -1.0, 0.0,
+				 1.0, -1.0, 0.0,
+				 1.0,  1.0, 0.0,
+				-1.0,  1.0, 0.0];
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+		quadPositionsBuffer.itemSize=3;
+		quadPositionsBuffer.numItems=4;
+	}
+
+	function drawScene()
+	{
+		gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+		gl.clear(gl.COLOR_BUFFER_BUT);
+		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
+		gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, quadPositionsBuffer.itemSize, gl.FLOAT, false, 0, 0)
+		gl.uniform1f(shaderProgram.zoomUniform, 1.0);
+		gl.uniform2f(shaderProgram.dispUniform, 0.0, 0.0);
+		gl.drawArrays(gl.TRIANGLE_STRIP, 0, quadPositionsBuffer.numItems);
+	}
+
+	function webGLStart() 
+	{
+		var canvas=document.getElementById(“BurningShip-Canvas”);
+		initGL(canvas);
+		initShaders();
+		initBuffers();
+		gl.clearColor(0.0, 0.0, 0.0, 1.0);
+		drawScene();
+	}
+</script>
+</head>
+
+
+<body onload=“initWebGL();”>
+	<canvas id=“BurningShip-Canvas” style=“border: none;” width=“500” height=“”500></canvas>
+</body>

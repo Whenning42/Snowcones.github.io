@@ -1,4 +1,5 @@
 <head>
+<script src=“webgl-debug.js”></script>
 
 <script id=“burningShip-fs” type=“x-shader/x-fragment”>
 	precision highp float;
@@ -133,7 +134,7 @@
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, quadPositionsBuffer.numItems);
 	}
 
-	function webGLStart() 
+	function initWebGL() 
 	{
 		var canvas=document.getElementById(“BurningShip-Canvas”);
 		initGL(canvas);

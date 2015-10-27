@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Scripting Tut</title>
+	<style>
+
+	</style>
+</head>
+<script>
+	var score=0;
+	var goodFirst=false;
+	function clickedGood() {
+		score++;
+		document.getElementById("score").innerHTML="Your score: "+score;
+		reorderButtons();
+	}
+	function clickedBad() {
+		score=0;
+		document.getElementById("score").innerHTML="Your score: "+score;
+		reorderButtons();
+	}
+	function reorderButtons() {
+		var goodButton=document.getElementById("goodButton");
+		var badButton=document.getElementById("badButton");
+		/*if(goodFirst){
+			badButton.parentNode.insertBefore(goodButton, badButton);
+			goodFirst=!goodFirst;
+		}
+		else {
+			goodButton.parentNode.insertBefore(badButton, goodButton);
+			goodFirst=!goodFirst;
+		}*/
+		if(Math.random()>.5){
+			if(goodFirst){
+				badButton.parentNode.insertBefore(goodButton, badButton);
+			}
+			else {
+				goodButton.parentNode.insertBefore(badButton, goodButton);
+			}
+			goodFirst=!goodFirst;
+		}
+	}
+</script>
+<body>
+	<p id="score">Your score: 0</p>
+	<button id="goodButton" onclick="clickedGood()" style="color:green">click me</button>
+	<button id="badButton" onclick="clickedBad()" style="color:red">don't click me</button>
+</body>
+</html>

@@ -1,49 +1,261 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Scripting Tut</title>
+	<title>2048</title>
 	<style>
+		.gameboard {
+			width:400px;
+		}
 
+		.gameboard div {
+			width:100px;
+			height:100px;
+			outline: 1px solid;
+			float: left;
+			text-align: center;
+			vertical-align: middle;
+			line-height: 100px;
+			font-size: 200%;
+		}
 	</style>
 </head>
 <script>
+
+	var board=[];
+	var temp;
 	var score=0;
-	var goodFirst=false;
-	function clickedGood() {
-		score++;
-		document.getElementById("score").innerHTML="Your score: "+score;
-		reorderButtons();
+	var highScore=0;
+	for(var i=0; i<16; i++)
+	{
+		board[i]=0;
 	}
-	function clickedBad() {
-		score=0;
-		document.getElementById("score").innerHTML="Your score: "+score;
-		reorderButtons();
+	board[Math.floor(Math.random()*16)]=2;
+	document.onkeydown=kPressed;
+	updateBoard();
+
+	setTimeout(updateView, 0);
+
+	function kPressed(event) {
+		var charCode=event.keyCode;
+		var dir=-1;
+		if(charCode==37)
+		{
+			dir=0;
+		}
+		if(charCode==38)
+		{
+			dir=1;
+		}
+		if(charCode==39)
+		{
+			dir=2;
+		}
+		if(charCode==40)
+		{
+			dir=3;
+		}
+		if(dir>=0)
+		{
+			var state=board.slice();
+			updateBoard(dir);
+	
+			var tempScore=score;
+	
+			if(!compareBoards(board, state, 16))
+			{
+				genValue();
+			}
+			for(var i=0; i<4; i++)
+			{
+				state=board.slice();
+				if(!compareBoards(updateBoard(i), state, 16))
+				{
+					board=state.slice();
+					break;
+				}
+				
+				if(i==3)
+				{
+					//You lose bro!
+				}
+			}
+		}
+		score=tempScore;
+		updateView();
 	}
-	function reorderButtons() {
-		var goodButton=document.getElementById("goodButton");
-		var badButton=document.getElementById("badButton");
-		/*if(goodFirst){
-			badButton.parentNode.insertBefore(goodButton, badButton);
-			goodFirst=!goodFirst;
-		}
-		else {
-			goodButton.parentNode.insertBefore(badButton, goodButton);
-			goodFirst=!goodFirst;
-		}*/
-		if(Math.random()>.5){
-			if(goodFirst){
-				badButton.parentNode.insertBefore(goodButton, badButton);
+
+	function genValue()
+	{
+		for(var i=0; i<16; i++)
+		{
+			if(board[i]==0)
+			{
+				break
 			}
-			else {
-				goodButton.parentNode.insertBefore(badButton, goodButton);
+			else if(i==15)
+			{
+				return;
 			}
-			goodFirst=!goodFirst;
 		}
+		var placed=false;
+		while(!placed)
+		{
+			var pos=Math.floor(Math.random()*16);
+			if(board[pos]==0)
+			{
+				placed=true;
+				board[pos]=Math.floor(Math.random())*2+2;
+			}
+		}
+	}
+
+	function updateBoard(dir) {
+		
+		//document.getElementById("score").innerHTML="Leet";
+		
+		if (dir==0)
+		{
+			for(var y=0; y<4; y++)
+			{
+				temp=compress(board[y*4], board[y*4+1], board[y*4+2], board[y*4+3]);
+				board[y*4]=temp[0];
+				board[y*4+1]=temp[1];
+				board[y*4+2]=temp[2];
+				board[y*4+3]=temp[3];
+			}
+		}
+		if (dir==1)
+		{
+			for(var x=0; x<4; x++)
+			{
+				temp=compress(board[x], board[x+4], board[x+8], board[x+12]);
+				board[x]=temp[0];
+				board[x+4]=temp[1];
+				board[x+8]=temp[2];
+				board[x+12]=temp[3];
+			}
+		}
+		if (dir==2)
+		{
+			for(var y=0; y<4; y++)
+			{
+				temp=compress(board[y*4+3], board[y*4+2], board[y*4+1], board[y*4]);
+				board[y*4+3]=temp[0];
+				board[y*4+2]=temp[1];
+				board[y*4+1]=temp[2];
+				board[y*4]=temp[3];
+			}
+		}
+		if (dir==3)
+		{
+			for(var x=0; x<4; x++)
+			{
+				temp=compress(board[x+12], board[x+8], board[x+4], board[x]);
+				board[x+12]=temp[0];
+				board[x+8]=temp[1];
+				board[x+4]=temp[2];
+				board[x]=temp[3];
+			}
+		}
+		return board;
+	}
+
+	function updateView() {
+		if(score>highScore)
+		{
+			highScore=score;
+		}
+		document.getElementById("score").innerHTML="High score: "+highScore+"<br>Current score: "+score;
+		for(var i=0; i<16; i++)
+		{
+			tile=document.getElementById("cell"+i);
+			if(board[i]!=0) {
+				tile.innerHTML=board[i];
+				var hue=Math.floor(360*Math.log(board[i])/Math.log(2)/12);
+				tile.style.backgroundColor="hsl("+hue+",100%,50%)";
+			} 
+			else
+			{
+				tile.innerHTML="";
+				tile.style.backgroundColor="rgb(255, 255, 255)";
+			}
+		}
+		console.log("Wow");
+	}
+
+	function compareBoards(b1, b2, l) {
+		var state=true;
+		for(var i=0; i<l; i++)
+		{
+			if(b1[i]!=b2[i])
+			{
+				state=false;
+				break;
+			}
+		}
+		return state;
+	}
+
+	function compress(v0, v1, v2, v3){
+		var row=[v0, v1, v2, v3];
+		for(var loc=1; loc<4; loc++)
+		{
+			for(var check=0; check<loc; check++)
+			{
+				if(row[check]==0)
+				{
+					row[check]=row[loc];
+					row[loc]=0;
+					break;
+				}
+			}
+		}
+
+		for(var loc=1; loc<4; loc++)
+		{
+			if(row[loc-1]==row[loc])
+			{
+				row[loc-1]=2*row[loc-1];
+				score+=row[loc-1];
+				row[loc]=0;
+			}
+		}
+
+		for(var loc=1; loc<4; loc++)
+		{
+			for(var check=0; check<loc; check++)
+			{
+				if(row[check]==0)
+				{
+					row[check]=row[loc];
+					row[loc]=0;
+					break;
+				}
+			}
+		}
+		return row;
 	}
 </script>
 <body>
-	<p id="score">Your score: 0</p>
-	<button id="goodButton" onclick="clickedGood()" style="color:green">click me</button>
-	<button id="badButton" onclick="clickedBad()" style="color:red">don't click me</button>
+	<p id="score">High score: 0<br>Current score: 0</p>
+	<div class="gameboard">
+		<div id="cell0"></div>
+		<div id="cell1"></div>
+		<div id="cell2"></div>
+		<div id="cell3"></div>
+		<div id="cell4"></div>
+		<div id="cell5"></div>
+		<div id="cell6"></div>
+		<div id="cell7"></div>
+		<div id="cell8"></div>
+		<div id="cell9"></div>
+		<div id="cell10"></div>
+		<div id="cell11"></div>
+		<div id="cell12"></div>
+		<div id="cell13"></div>
+		<div id="cell14"></div>
+		<div id="cell15"></div>
+	</div>
+	
 </body>
 </html>

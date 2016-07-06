@@ -1,0 +1,252 @@
+<head>
+
+<script src="webgl-debug.js"></script>
+
+<script id="burningShip-fs" type="x-shader/x-fragment">
+	precision highp float;
+	uniform float zoom;
+	uniform vec2 disp;
+	uniform vec2 dim;
+	void main(void)
+	{
+		highp vec2 inPos=zoom*vec2(1.0, -1.0)*vec2(gl_FragCoord.x/dim.x-.5, gl_FragCoord.y/dim.y-.5)+vec2(-disp.x, -disp.y);
+		
+ 		float castVal=float(zoom);
+ 		const int maxIter=100;
+   		int iter=maxIter;
+   		vec2 current=vec2(0.0);
+   		vec2 tempCurrent=vec2(0.0);
+    		for(int count=0; count<maxIter; count++)
+    		{
+        		tempCurrent.x=current.x*current.x-current.y*current.y+inPos.x;
+        		tempCurrent.y=2.0*current.x*current.y+inPos.y;
+       			current=tempCurrent;
+       			if(current.x*current.x+current.y+current.y>4.0)
+       			{
+       				iter = count;
+       			 	break;
+       			}
+  		}
+		gl_FragColor=vec4((float(maxIter)-float(iter))/float(maxIter)*vec3(135.0/255.0, 206.0/255.0, 250.0/255.0), 1.0);
+	}
+</script>
+
+<script id="burningShip-vs" type="x-shader/x-vertex">
+	precision highp float;
+	attribute vec3 vertexPos;
+	void main(void)
+	{
+		gl_Position=vec4(vertexPos, 1.0);
+	}
+</script>
+
+
+<script type="text/javascript">
+	var gl;
+	var zoom=1;
+	var disp=[-.5, -.5];
+	var resizeTemp=[0, 0];
+	var last;
+	var mouseState=false;
+	var shiftState=false;
+	var screenWidth=500;
+	var screenHeight=500;
+	var lastScreenSize=[screenWidth, screenHeight];
+	var canvas;
+	window.addEventListener('DOMMouseScoll', mouseScrolled, false);
+
+	document.captureEvents(Event.MOUSEMOVE)
+	document.onmousemove=mouseDidMove;
+	document.onmousedown=mousePressed;
+	document.onmouseup=mouseLifted;
+	document.onmousewheel=mouseScrolled;
+	document.onkeydown=keyPressed;
+	document.onkeyup=keyLifted;
+	
+	function initGL(canvas)
+	{
+		try
+		{
+			gl=WebGLDebugUtils.makeDebugContext(canvas.getContext("webgl"));
+		} catch(e) {}
+		if (!gl) 
+		{
+			alert("Couldn't initialize WebGL");
+		}
+	}
+
+	function getShader(gl, id)
+	{
+		var shaderScript=document.getElementById(id);
+		if(!shaderScript)
+		{
+			return null;
+		}
+
+		var str="";
+		var k=shaderScript.firstChild;
+		while(k)
+		{
+			if(k.nodeType==3)
+			{
+				str+=k.textContent;
+			}
+			k=k.nextSibiling;
+		}
+		
+		var shader;
+		if(shaderScript.type=="x-shader/x-fragment")
+		{
+			shader=gl.createShader(gl.FRAGMENT_SHADER);
+		} 
+		else if (shaderScript.type=="x-shader/x-vertex")
+		{
+			shader=gl.createShader(gl.VERTEX_SHADER);
+		}
+		else
+		{
+			return null;
+		}
+
+		gl.shaderSource(shader, str);
+		gl.compileShader(shader);
+		if(!gl.getShaderParameter(shader, gl.COMPILE_STATUS))
+		{
+			alert(gl.getShaderInfoLog(shader));
+			return null;
+		}
+		return shader;
+	}
+
+	var shaderProgram;
+
+	function initShaders()
+	{
+		var vertexShader=getShader(gl, "burningShip-vs");
+		var fragmentShader=getShader(gl, "burningShip-fs");
+
+		shaderProgram=gl.createProgram();
+		gl.attachShader(shaderProgram, vertexShader);
+		gl.attachShader(shaderProgram, fragmentShader);
+		gl.linkProgram(shaderProgram);
+		
+		if(!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS))
+		{
+			alert("Couldn't initialize shaders");
+		}
+
+		gl.useProgram(shaderProgram);
+
+		shaderProgram.vertexPositionAttribute=gl.getAttribLocation(shaderProgram, "vertexPos");
+		gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+
+		shaderProgram.zoomUniform=gl.getUniformLocation(shaderProgram, "zoom");
+		shaderProgram.dispUniform=gl.getUniformLocation(shaderProgram, "disp");
+		shaderProgram.dimUniform=gl.getUniformLocation(shaderProgram, "dim");
+	}
+
+	var quadPositionsBuffer;
+
+	function initBuffers() 
+	{
+		quadPositionsBuffer=gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
+		var vertices=[	-1.0, -1.0, 0.0,
+				 1.0, -1.0, 0.0,
+				 -1.0,  1.0, 0.0,
+				1.0,  1.0, 0.0];
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+		quadPositionsBuffer.itemSize=3;
+		quadPositionsBuffer.numItems=4;
+	}
+
+	function drawScene()
+	{
+		gl.viewport(0, 0, screenWidth, screenHeight);
+		gl.clear(gl.COLOR_BUFFER_BUT);
+		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
+		gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, quadPositionsBuffer.itemSize, gl.FLOAT, false, 0, 0)
+		gl.uniform1f(shaderProgram.zoomUniform, zoom);
+		gl.uniform2f(shaderProgram.dispUniform, disp[0], disp[1]);
+		gl.uniform2f(shaderProgram.dimUniform, screenWidth, screenHeight);
+		gl.drawArrays(gl.TRIANGLE_STRIP, 0, quadPositionsBuffer.numItems);
+	}
+
+	function initWebGL() 
+	{
+		canvas=document.getElementById("BurningShip-Canvas");
+		initGL(canvas);
+		initShaders();
+		initBuffers();
+		gl.clearColor(0.0, 0.0, 0.0, 1.0);
+		drawScene();
+	}
+
+	function mouseDidMove(e)
+	{
+		console.log(disp[0]);
+		if(typeof(last)!='undefined'&&mouseState&&!shiftState)
+		{
+			disp[0]+=zoom*(e.clientX-last[0])/screenWidth;
+			disp[1]+=zoom*(e.clientY-last[1])/screenHeight;
+		}
+		else if (shiftState)
+		{
+			resizeTemp[0]+=e.clientX-last[0];
+			resizeTemp[1]+=e.clientY-last[1]
+			screenWidth=resizeTemp[0]+lastScreenSize[0];
+			screenHeight=resizeTemp[1]+lastScreenSize[1];
+			canvas.width=screenWidth;
+			canvas.height=screenHeight;
+		}
+		last=[e.clientX, e.clientY];
+		drawScene();
+	}
+	function mousePressed(e)
+	{
+		if(e.which===1)
+		{
+			mouseState=true;
+			console.log("Pressed");
+		}
+	}
+	function mouseLifted(e)
+	{
+		if(e.which===1)
+		{
+			mouseState=false;
+			console.log("Lifted");
+		}
+	}
+	function mouseScrolled(e)
+	{
+		e.preventDefault();
+		console.log(zoom);
+		zoom/=1+e.wheelDelta/1000;
+		drawScene()
+	}
+	function keyPressed(e)
+	{
+		if(e.which===16)
+		{
+			shiftState=true;
+		}
+	}
+	function keyLifted(e)
+	{
+		if(e.which===16)
+		{
+			shiftState=false;
+			lastScreenSize[0]=screenWidth;
+			lastScreenSize[1]=screenHeight;
+			resizeTemp=[0, 0];
+		}
+	}
+</script>
+</head>
+
+
+<body onload="initWebGL();">
+	<canvas id="BurningShip-Canvas" style="border: none;" width="500" height="500"></canvas>
+	<p>Click and drag to move the image, scroll to zoom, and hold shift while dragging to resize the view.</p>
+</body>

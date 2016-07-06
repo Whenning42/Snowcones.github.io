@@ -16,10 +16,8 @@
    		int iter=0;
    		vec2 current=vec2(0.0);
    		vec2 tempCurrent=vec2(0.0);
-    		for(int count=0; count<maxIter; count++)
+    		for(iter=0; iter<maxIter; iter++)
     		{
-			iter=count;
-        		current=abs(current);
         		tempCurrent.x=current.x*current.x-current.y*current.y+inPos.x;
         		tempCurrent.y=2.0*current.x*current.y+inPos.y;
         		current=tempCurrent;
@@ -29,8 +27,6 @@
         		}
    		}
 		gl_FragColor=vec4((float(maxIter)-float(iter))/float(maxIter)*vec3(135.0/255.0, 206.0/255.0, 250.0/255.0), 1.0);
-		//gl_FragColor=vec4(vec3(float(iter)/float(maxIter)), 1.0);
-		//gl_FragColor=vec4(vec3(current.x*current.x+current.y+current.y), 1.0);
 	}
 </script>
 

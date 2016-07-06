@@ -13,19 +13,20 @@
 		
  		float castVal=float(zoom);
    		const int maxIter=100;
-   		int iter=0;
+   		int iter=maxIter;
    		vec2 current=vec2(0.0);
    		vec2 tempCurrent=vec2(0.0);
-    		for(iter=0; iter<maxIter; iter++)
-    		{
-        		tempCurrent.x=current.x*current.x-current.y*current.y+inPos.x;
-        		tempCurrent.y=2.0*current.x*current.y+inPos.y;
-        		current=tempCurrent;
-        		if(current.x*current.x+current.y+current.y>4.0)
-        		{
-        		    break;
-        		}
-   		}
+    	for(int count=0; count<maxIter; count++)
+    	{
+        	tempCurrent.x=current.x*current.x-current.y*current.y+inPos.x;
+        	tempCurrent.y=2.0*current.x*current.y+inPos.y;
+       		current=tempCurrent;
+       		if(current.x*current.x+current.y+current.y>4.0)
+       		{
+       			iter = count;
+       		    break;
+       		}
+  		}
 		gl_FragColor=vec4((float(maxIter)-float(iter))/float(maxIter)*vec3(135.0/255.0, 206.0/255.0, 250.0/255.0), 1.0);
 	}
 </script>

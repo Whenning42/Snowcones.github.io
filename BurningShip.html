@@ -22,7 +22,7 @@
         		tempCurrent.x=current.x*current.x-current.y*current.y+inPos.x;
         		tempCurrent.y=2.0*current.x*current.y+inPos.y;
        			current=tempCurrent;
-       			if(current.x*current.x+current.y+current.y>4.0)
+       			if(current.x*current.x+current.y*current.y>4.0)
        			{
        				iter = count;
        			 	break;
